@@ -117,7 +117,12 @@ class ContinuousTrainer:
             loss = policy_loss + 2.0 * value_loss
             loss.backward()
             self.optimizer.step()
-            return loss.item(), policy_loss.item(), value_loss.item()
+            
+            l_val, p_val, v_val = loss.item(), policy_loss.item(), value_loss.item()
+            del dataset, loader, states, target_policies, target_values, policy_logits, value_preds
+            import gc
+            gc.collect()
+            return l_val, p_val, v_val
         return 0.0, 0.0, 0.0
 
 if __name__ == '__main__':
