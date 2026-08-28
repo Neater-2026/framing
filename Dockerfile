@@ -1,4 +1,4 @@
-# Render 極輕量 CPU 專用 PyTorch Dockerfile (徹底防止 512MB RAM 超載)
+# Render 極輕量 CPU 專用 PyTorch Dockerfile (修復 PyPI 索引連結)
 FROM python:3.10-slim
 
 WORKDIR /app
@@ -10,8 +10,8 @@ ENV PYTHONUNBUFFERED=1 \
     OPENBLAS_NUM_THREADS=1 \
     PORT=10000
 
-# 安裝極輕量 CPU-only PyTorch (不包含 1.5GB 的 NVIDIA CUDA 共享庫，記憶體直接省下 70%)
-RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
+# 使用 --extra-index-url 保持 PyPI 與 PyTorch CPU 雙源索引，順利安裝輕量版 PyTorch
+RUN pip install --no-cache-dir torch --extra-index-url https://download.pytorch.org/whl/cpu
 RUN pip install --no-cache-dir numpy fastapi uvicorn pydantic
 
 COPY . .
