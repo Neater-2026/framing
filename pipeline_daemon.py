@@ -5,6 +5,7 @@ import json
 import threading
 import copy
 import random
+import gc
 import numpy as np
 
 sys.path.insert(0, os.path.dirname(__file__))
@@ -17,9 +18,9 @@ from mcts import MCTS
 
 class FramingPipelineDaemon:
     """
-    純後台 AlphaZero 不間斷深度學習與訓練系統
+    純後台 AlphaZero 不間斷深度學習與訓練系統 (記憶體絕不累積版)
     """
-    def __init__(self, data_dir='data/replay_buffer', checkpoint_dir='checkpoints', n_simulations=50):
+    def __init__(self, data_dir='data/replay_buffer', checkpoint_dir='checkpoints', n_simulations=30):
         self.data_dir = data_dir
         self.checkpoint_dir = checkpoint_dir
         self.n_simulations = n_simulations
@@ -54,24 +55,26 @@ class FramingPipelineDaemon:
                 self.stats['episodes_completed'] += 1
                 if self.stats['episodes_completed'] % 5 == 0:
                     print(f"[Self-Play] 已完成 {self.stats['episodes_completed']} 局自自我對弈。")
-                time.sleep(0.5)
+                gc.collect()
+                time.sleep(3) # 釋放 CPU / RAM
             except Exception as e:
                 print(f"[Self-Play Error] {e}")
-                time.sleep(2)
+                time.sleep(5)
 
     def run_training_loop(self):
         """背景訓練與模型迭代線程"""
         print("[Daemon] 模型微調 (Trainer) 服務已啟動...")
         while self.running:
             try:
-                # 每隔 10 秒執行一次 Mini-Batch 梯度優化
-                time.sleep(10)
+                # 每隔 20 秒執行一次 Mini-Batch 梯度優化
+                time.sleep(20)
                 buffer_files = os.listdir(self.data_dir)
-                if len(buffer_files) >= 3:
-                    loss, p_loss, v_loss = self.trainer.train_step(batch_size=32)
+                if len(buffer_files) >= 2:
+                    loss, p_loss, v_loss = self.trainer.train_step(batch_size=16)
                     self.stats['training_steps'] += 1
                     self.stats['last_update_time'] = time.strftime("%Y-%m-%d %H:%M:%S")
                     print(f"[Trainer Step {self.stats['training_steps']}] Loss: {loss:.4f} (Policy: {p_loss:.4f}, Value: {v_loss:.4f})")
+                    gc.collect()
             except Exception as e:
                 print(f"[Trainer Error] {e}")
                 time.sleep(5)
