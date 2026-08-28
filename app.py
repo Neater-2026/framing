@@ -57,6 +57,10 @@ class SocialLoginRequest(BaseModel):
     email: Optional[str] = None
     avatarUrl: Optional[str] = None
 
+class ReplayLogRequest(BaseModel):
+    moves: List[Any]
+    finalScores: List[int]
+
 from auth import get_or_create_social_user
 
 @app.get("/")
